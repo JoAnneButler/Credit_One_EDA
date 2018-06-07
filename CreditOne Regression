@@ -1,0 +1,2909 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "C:\\Users\\joann\\Anaconda3\\lib\\site-packages\\sklearn\\cross_validation.py:41: DeprecationWarning: This module was deprecated in version 0.18 in favor of the model_selection module into which all the refactored classes and functions are moved. Also note that the interface of the new CV iterators are different from that of this module. This module will be removed in 0.20.\n",
+      "  \"This module will be removed in 0.20.\", DeprecationWarning)\n"
+     ]
+    }
+   ],
+   "source": [
+    "# imports - numpy, pandas, scipy, math, matplotlib\n",
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "import scipy\n",
+    "from math import sqrt\n",
+    "import matplotlib.pyplot as plt\n",
+    "\n",
+    "# import estimators\n",
+    "from sklearn.neighbors import KNeighborsClassifier\n",
+    "from sklearn import tree\n",
+    "from sklearn import svm\n",
+    "from sklearn.linear_model import SGDClassifier\n",
+    "from sklearn.ensemble import RandomForestClassifier\n",
+    "from sklearn.ensemble import GradientBoostingClassifier\n",
+    "\n",
+    "# model metrics\n",
+    "from sklearn.metrics import accuracy_score\n",
+    "from sklearn.metrics import cohen_kappa_score\n",
+    "from sklearn.metrics import confusion_matrix\n",
+    "from sklearn.metrics import classification_report\n",
+    "from sklearn.model_selection import cross_val_score\n",
+    "\n",
+    "# cross validation\n",
+    "from sklearn.cross_validation import train_test_split"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>ID</th>\n",
+       "      <th>Credit Amount</th>\n",
+       "      <th>Gender</th>\n",
+       "      <th>Education</th>\n",
+       "      <th>Marital Status</th>\n",
+       "      <th>Age</th>\n",
+       "      <th>Repay_Sept</th>\n",
+       "      <th>Repay_Aug</th>\n",
+       "      <th>Repay_July</th>\n",
+       "      <th>Repay_June</th>\n",
+       "      <th>...</th>\n",
+       "      <th>Bill_June</th>\n",
+       "      <th>Bill_May</th>\n",
+       "      <th>Bill_April</th>\n",
+       "      <th>PrevAmt_Sept</th>\n",
+       "      <th>PrevAmt_Aug</th>\n",
+       "      <th>PrevAmt_July</th>\n",
+       "      <th>PrevAmt_June</th>\n",
+       "      <th>PrevAmt_May</th>\n",
+       "      <th>PrevAmt_April</th>\n",
+       "      <th>Default</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1</td>\n",
+       "      <td>20000</td>\n",
+       "      <td>2</td>\n",
+       "      <td>2</td>\n",
+       "      <td>1</td>\n",
+       "      <td>24</td>\n",
+       "      <td>2</td>\n",
+       "      <td>2</td>\n",
+       "      <td>-1</td>\n",
+       "      <td>-1</td>\n",
+       "      <td>...</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>689</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>2</td>\n",
+       "      <td>120000</td>\n",
+       "      <td>2</td>\n",
+       "      <td>2</td>\n",
+       "      <td>2</td>\n",
+       "      <td>26</td>\n",
+       "      <td>-1</td>\n",
+       "      <td>2</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>3272</td>\n",
+       "      <td>3455</td>\n",
+       "      <td>3261</td>\n",
+       "      <td>0</td>\n",
+       "      <td>1000</td>\n",
+       "      <td>1000</td>\n",
+       "      <td>1000</td>\n",
+       "      <td>0</td>\n",
+       "      <td>2000</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>3</td>\n",
+       "      <td>90000</td>\n",
+       "      <td>2</td>\n",
+       "      <td>2</td>\n",
+       "      <td>2</td>\n",
+       "      <td>34</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>14331</td>\n",
+       "      <td>14948</td>\n",
+       "      <td>15549</td>\n",
+       "      <td>1518</td>\n",
+       "      <td>1500</td>\n",
+       "      <td>1000</td>\n",
+       "      <td>1000</td>\n",
+       "      <td>1000</td>\n",
+       "      <td>5000</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>4</td>\n",
+       "      <td>50000</td>\n",
+       "      <td>2</td>\n",
+       "      <td>2</td>\n",
+       "      <td>1</td>\n",
+       "      <td>37</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>28314</td>\n",
+       "      <td>28959</td>\n",
+       "      <td>29547</td>\n",
+       "      <td>2000</td>\n",
+       "      <td>2019</td>\n",
+       "      <td>1200</td>\n",
+       "      <td>1100</td>\n",
+       "      <td>1069</td>\n",
+       "      <td>1000</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>5</td>\n",
+       "      <td>50000</td>\n",
+       "      <td>1</td>\n",
+       "      <td>2</td>\n",
+       "      <td>1</td>\n",
+       "      <td>57</td>\n",
+       "      <td>-1</td>\n",
+       "      <td>0</td>\n",
+       "      <td>-1</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>20940</td>\n",
+       "      <td>19146</td>\n",
+       "      <td>19131</td>\n",
+       "      <td>2000</td>\n",
+       "      <td>36681</td>\n",
+       "      <td>10000</td>\n",
+       "      <td>9000</td>\n",
+       "      <td>689</td>\n",
+       "      <td>679</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>5 rows × 25 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   ID  Credit Amount  Gender  Education  Marital Status  Age  Repay_Sept  \\\n",
+       "0   1          20000       2          2               1   24           2   \n",
+       "1   2         120000       2          2               2   26          -1   \n",
+       "2   3          90000       2          2               2   34           0   \n",
+       "3   4          50000       2          2               1   37           0   \n",
+       "4   5          50000       1          2               1   57          -1   \n",
+       "\n",
+       "   Repay_Aug  Repay_July  Repay_June   ...     Bill_June  Bill_May  \\\n",
+       "0          2          -1          -1   ...             0         0   \n",
+       "1          2           0           0   ...          3272      3455   \n",
+       "2          0           0           0   ...         14331     14948   \n",
+       "3          0           0           0   ...         28314     28959   \n",
+       "4          0          -1           0   ...         20940     19146   \n",
+       "\n",
+       "   Bill_April  PrevAmt_Sept  PrevAmt_Aug  PrevAmt_July  PrevAmt_June  \\\n",
+       "0           0             0          689             0             0   \n",
+       "1        3261             0         1000          1000          1000   \n",
+       "2       15549          1518         1500          1000          1000   \n",
+       "3       29547          2000         2019          1200          1100   \n",
+       "4       19131          2000        36681         10000          9000   \n",
+       "\n",
+       "   PrevAmt_May  PrevAmt_April  Default  \n",
+       "0            0              0        1  \n",
+       "1            0           2000        1  \n",
+       "2         1000           5000        0  \n",
+       "3         1069           1000        0  \n",
+       "4          689            679        0  \n",
+       "\n",
+       "[5 rows x 25 columns]"
+      ]
+     },
+     "execution_count": 2,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "rawData = pd.read_csv('default of credit card clients.csv', header = 1)\n",
+    "rawData.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>Credit Amount</th>\n",
+       "      <th>Gender</th>\n",
+       "      <th>Education</th>\n",
+       "      <th>Marital Status</th>\n",
+       "      <th>Age</th>\n",
+       "      <th>Repay_Sept</th>\n",
+       "      <th>Repay_Aug</th>\n",
+       "      <th>Repay_July</th>\n",
+       "      <th>Repay_June</th>\n",
+       "      <th>Repay_May</th>\n",
+       "      <th>...</th>\n",
+       "      <th>Bill_July</th>\n",
+       "      <th>Bill_June</th>\n",
+       "      <th>Bill_May</th>\n",
+       "      <th>Bill_April</th>\n",
+       "      <th>PrevAmt_Sept</th>\n",
+       "      <th>PrevAmt_Aug</th>\n",
+       "      <th>PrevAmt_July</th>\n",
+       "      <th>PrevAmt_June</th>\n",
+       "      <th>PrevAmt_May</th>\n",
+       "      <th>PrevAmt_April</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>20000</td>\n",
+       "      <td>2</td>\n",
+       "      <td>2</td>\n",
+       "      <td>1</td>\n",
+       "      <td>24</td>\n",
+       "      <td>2</td>\n",
+       "      <td>2</td>\n",
+       "      <td>-1</td>\n",
+       "      <td>-1</td>\n",
+       "      <td>-2</td>\n",
+       "      <td>...</td>\n",
+       "      <td>689</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>689</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>120000</td>\n",
+       "      <td>2</td>\n",
+       "      <td>2</td>\n",
+       "      <td>2</td>\n",
+       "      <td>26</td>\n",
+       "      <td>-1</td>\n",
+       "      <td>2</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>2682</td>\n",
+       "      <td>3272</td>\n",
+       "      <td>3455</td>\n",
+       "      <td>3261</td>\n",
+       "      <td>0</td>\n",
+       "      <td>1000</td>\n",
+       "      <td>1000</td>\n",
+       "      <td>1000</td>\n",
+       "      <td>0</td>\n",
+       "      <td>2000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>90000</td>\n",
+       "      <td>2</td>\n",
+       "      <td>2</td>\n",
+       "      <td>2</td>\n",
+       "      <td>34</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>13559</td>\n",
+       "      <td>14331</td>\n",
+       "      <td>14948</td>\n",
+       "      <td>15549</td>\n",
+       "      <td>1518</td>\n",
+       "      <td>1500</td>\n",
+       "      <td>1000</td>\n",
+       "      <td>1000</td>\n",
+       "      <td>1000</td>\n",
+       "      <td>5000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>50000</td>\n",
+       "      <td>2</td>\n",
+       "      <td>2</td>\n",
+       "      <td>1</td>\n",
+       "      <td>37</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>49291</td>\n",
+       "      <td>28314</td>\n",
+       "      <td>28959</td>\n",
+       "      <td>29547</td>\n",
+       "      <td>2000</td>\n",
+       "      <td>2019</td>\n",
+       "      <td>1200</td>\n",
+       "      <td>1100</td>\n",
+       "      <td>1069</td>\n",
+       "      <td>1000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>50000</td>\n",
+       "      <td>1</td>\n",
+       "      <td>2</td>\n",
+       "      <td>1</td>\n",
+       "      <td>57</td>\n",
+       "      <td>-1</td>\n",
+       "      <td>0</td>\n",
+       "      <td>-1</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>35835</td>\n",
+       "      <td>20940</td>\n",
+       "      <td>19146</td>\n",
+       "      <td>19131</td>\n",
+       "      <td>2000</td>\n",
+       "      <td>36681</td>\n",
+       "      <td>10000</td>\n",
+       "      <td>9000</td>\n",
+       "      <td>689</td>\n",
+       "      <td>679</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>5 rows × 23 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   Credit Amount  Gender  Education  Marital Status  Age  Repay_Sept  \\\n",
+       "0          20000       2          2               1   24           2   \n",
+       "1         120000       2          2               2   26          -1   \n",
+       "2          90000       2          2               2   34           0   \n",
+       "3          50000       2          2               1   37           0   \n",
+       "4          50000       1          2               1   57          -1   \n",
+       "\n",
+       "   Repay_Aug  Repay_July  Repay_June  Repay_May      ...        Bill_July  \\\n",
+       "0          2          -1          -1         -2      ...              689   \n",
+       "1          2           0           0          0      ...             2682   \n",
+       "2          0           0           0          0      ...            13559   \n",
+       "3          0           0           0          0      ...            49291   \n",
+       "4          0          -1           0          0      ...            35835   \n",
+       "\n",
+       "   Bill_June  Bill_May  Bill_April  PrevAmt_Sept  PrevAmt_Aug  PrevAmt_July  \\\n",
+       "0          0         0           0             0          689             0   \n",
+       "1       3272      3455        3261             0         1000          1000   \n",
+       "2      14331     14948       15549          1518         1500          1000   \n",
+       "3      28314     28959       29547          2000         2019          1200   \n",
+       "4      20940     19146       19131          2000        36681         10000   \n",
+       "\n",
+       "   PrevAmt_June  PrevAmt_May  PrevAmt_April  \n",
+       "0             0            0              0  \n",
+       "1          1000            0           2000  \n",
+       "2          1000         1000           5000  \n",
+       "3          1100         1069           1000  \n",
+       "4          9000          689            679  \n",
+       "\n",
+       "[5 rows x 23 columns]"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# rerunning features to include 'Default', dependent variable. Removing ID column\n",
+    "#features = rawData.iloc[:,1:25]\n",
+    "#print('Summary of feature sample')\n",
+    "#features.head()\n",
+    "# rerunning again, excluding ID and dependent variable\n",
+    "features = rawData.iloc[:,1:24]\n",
+    "features.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Define Models  - adding svm and tree models\n",
+    "modelKNN = KNeighborsClassifier()\n",
+    "modelSGD = SGDClassifier()\n",
+    "modelRF = RandomForestClassifier()\n",
+    "modelGB = GradientBoostingClassifier()\n",
+    "modelTree = tree.DecisionTreeClassifier()\n",
+    "from sklearn.svm import SVC\n",
+    "modelSVM = SVC"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# adding svm and tree models (these two models added to above code)\n",
+    "#modelTree = tree.DecisionTreeClassifier()\n",
+    "#modelSVM = svm.SVC()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0        1\n",
+      "1        1\n",
+      "2        0\n",
+      "3        0\n",
+      "4        0\n",
+      "5        0\n",
+      "6        0\n",
+      "7        0\n",
+      "8        0\n",
+      "9        0\n",
+      "10       0\n",
+      "11       0\n",
+      "12       0\n",
+      "13       1\n",
+      "14       0\n",
+      "15       0\n",
+      "16       1\n",
+      "17       0\n",
+      "18       0\n",
+      "19       0\n",
+      "20       0\n",
+      "21       1\n",
+      "22       1\n",
+      "23       1\n",
+      "24       0\n",
+      "25       0\n",
+      "26       1\n",
+      "27       0\n",
+      "28       0\n",
+      "29       0\n",
+      "        ..\n",
+      "29970    0\n",
+      "29971    0\n",
+      "29972    0\n",
+      "29973    1\n",
+      "29974    1\n",
+      "29975    0\n",
+      "29976    1\n",
+      "29977    0\n",
+      "29978    0\n",
+      "29979    0\n",
+      "29980    0\n",
+      "29981    0\n",
+      "29982    1\n",
+      "29983    0\n",
+      "29984    0\n",
+      "29985    0\n",
+      "29986    0\n",
+      "29987    0\n",
+      "29988    0\n",
+      "29989    0\n",
+      "29990    0\n",
+      "29991    1\n",
+      "29992    0\n",
+      "29993    0\n",
+      "29994    1\n",
+      "29995    0\n",
+      "29996    0\n",
+      "29997    1\n",
+      "29998    1\n",
+      "29999    1\n",
+      "Name: Default, Length: 30000, dtype: int64\n"
+     ]
+    }
+   ],
+   "source": [
+    "# defining dependent variable\n",
+    "depVar = rawData['Default']\n",
+    "print(depVar)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "                Credit Amount       Gender     Education  Marital Status  \\\n",
+      "Credit Amount    1.683446e+10  1571.050630 -22322.227579    -7323.669658   \n",
+      "Gender           1.571051e+03     0.239247      0.004962       -0.008014   \n",
+      "Education       -2.232223e+04     0.004962      0.554272       -0.057954   \n",
+      "Marital Status  -7.323670e+03    -0.008014     -0.057954        0.272452   \n",
+      "Age              1.730767e+05    -0.409726      1.251988       -1.992764   \n",
+      "Repay_Sept      -3.954593e+04    -0.031685      0.094202        0.011683   \n",
+      "Repay_Aug       -4.603765e+04    -0.041442      0.115604        0.015122   \n",
+      "Repay_July      -4.443225e+04    -0.038694      0.109088        0.020421   \n",
+      "Repay_June      -4.057181e+04    -0.034411      0.101430        0.020213   \n",
+      "Repay_May       -3.667056e+04    -0.030521      0.087814        0.021074   \n",
+      "Repay_April     -3.509308e+04    -0.024754      0.076186        0.020616   \n",
+      "Bill_Sept        2.727020e+09 -1211.694332    909.885257     -902.154685   \n",
+      "Bill_Aug         2.570130e+09 -1085.595467    634.798683     -802.517866   \n",
+      "Bill_July        2.548533e+09  -833.207432    346.636738     -901.679085   \n",
+      "Bill_June        2.453926e+09  -688.489572   -293.636171     -783.881599   \n",
+      "Bill_May         2.331481e+09  -505.694333   -563.008154     -805.840875   \n",
+      "Bill_April       2.243837e+09  -487.430160   -560.712350     -659.223347   \n",
+      "PrevAmt_Sept     4.195711e+08    -1.964266   -506.667858      -51.691615   \n",
+      "PrevAmt_Aug      5.333504e+08   -15.675500   -562.524961      -97.327974   \n",
+      "PrevAmt_July     4.801180e+08   -74.034812   -580.608025      -32.546082   \n",
+      "PrevAmt_June     4.131202e+08   -17.080110   -477.604029     -103.518204   \n",
+      "PrevAmt_May      4.305657e+08   -12.458809   -513.432438       -9.607709   \n",
+      "PrevAmt_April    5.065153e+08   -24.051885   -583.157800      -61.623271   \n",
+      "\n",
+      "                          Age    Repay_Sept     Repay_Aug    Repay_July  \\\n",
+      "Credit Amount   173076.722569 -39545.930009 -46037.648360 -44432.253315   \n",
+      "Gender              -0.409726     -0.031685     -0.041442     -0.038694   \n",
+      "Education            1.251988      0.094202      0.115604      0.109088   \n",
+      "Marital Status      -1.992764      0.011683      0.015122      0.020421   \n",
+      "Age                 84.969755     -0.408639     -0.553408     -0.585263   \n",
+      "Repay_Sept          -0.408639      1.262930      0.904330      0.772384   \n",
+      "Repay_Aug           -0.553408      0.904330      1.433254      1.098371   \n",
+      "Repay_July          -0.585263      0.772384      1.098371      1.432492   \n",
+      "Repay_June          -0.535851      0.707972      0.926680      1.087761   \n",
+      "Repay_May           -0.562245      0.648743      0.844886      0.931455   \n",
+      "Repay_April         -0.517022      0.613292      0.792320      0.870815   \n",
+      "Bill_Sept        38172.933546  15480.304170  20706.614217  18373.210469   \n",
+      "Bill_Aug         35613.657962  15185.916919  20045.829482  20214.071495   \n",
+      "Bill_July        34334.251320  14011.556537  18609.510991  18882.491544   \n",
+      "Bill_June        30453.108180  12950.248389  17116.298983  17494.100555   \n",
+      "Bill_May         27654.067800  12341.668685  16110.952468  16382.947539   \n",
+      "Bill_April       26137.648547  11844.759724  15642.875812  15847.089648   \n",
+      "PrevAmt_Sept      3992.041735  -1475.495089  -1600.240756     25.668468   \n",
+      "PrevAmt_Aug       4626.861549  -1815.138407  -1627.192336  -1841.952825   \n",
+      "PrevAmt_July      4746.824393  -1396.168258  -1178.331282  -1123.428782   \n",
+      "PrevAmt_June      3087.324192  -1126.847945   -878.843879   -863.762183   \n",
+      "PrevAmt_May       3218.052172   -999.107730   -678.468530   -655.796002   \n",
+      "PrevAmt_April     3191.903901  -1172.193614   -776.835035   -763.026041   \n",
+      "\n",
+      "                  Repay_June     Repay_May      ...           Bill_July  \\\n",
+      "Credit Amount  -40571.811859 -36670.562325      ...        2.548533e+09   \n",
+      "Gender             -0.034411     -0.030521      ...       -8.332074e+02   \n",
+      "Education           0.101430      0.087814      ...        3.466367e+02   \n",
+      "Marital Status      0.020213      0.021074      ...       -9.016791e+02   \n",
+      "Age                -0.535851     -0.562245      ...        3.433425e+04   \n",
+      "Repay_Sept          0.707972      0.648743      ...        1.401156e+04   \n",
+      "Repay_Aug           0.926680      0.844886      ...        1.860951e+04   \n",
+      "Repay_July          1.087761      0.931455      ...        1.888249e+04   \n",
+      "Repay_June          1.366885      1.086161      ...        1.986300e+04   \n",
+      "Repay_May           1.086161      1.284114      ...        1.912266e+04   \n",
+      "Repay_April         0.963263      1.064545      ...        1.923442e+04   \n",
+      "Bill_Sept       17460.198259  17246.377531      ...        4.556511e+09   \n",
+      "Bill_Aug        18790.627741  18301.285286      ...        4.582086e+09   \n",
+      "Bill_July       19862.999426  19122.663330      ...        4.809338e+09   \n",
+      "Bill_June       18496.423186  19822.925512      ...        4.122238e+09   \n",
+      "Bill_May        17265.551898  18586.590324      ...        3.726780e+09   \n",
+      "Bill_April      16651.586314  17715.690075      ...        3.524247e+09   \n",
+      "PrevAmt_Sept     -181.295613   -114.281714      ...        2.806565e+08   \n",
+      "PrevAmt_Aug       -52.358166    -83.324487      ...        5.064226e+08   \n",
+      "PrevAmt_July    -1425.205189    180.812142      ...        1.587478e+08   \n",
+      "PrevAmt_June     -796.035739  -1034.961970      ...        1.558003e+08   \n",
+      "PrevAmt_May      -599.991629   -577.161017      ...        1.904126e+08   \n",
+      "PrevAmt_April    -552.137338   -463.892613      ...        2.247817e+08   \n",
+      "\n",
+      "                   Bill_June      Bill_May    Bill_April  PrevAmt_Sept  \\\n",
+      "Credit Amount   2.453926e+09  2.331481e+09  2.243837e+09  4.195711e+08   \n",
+      "Gender         -6.884896e+02 -5.056943e+02 -4.874302e+02 -1.964266e+00   \n",
+      "Education      -2.936362e+02 -5.630082e+02 -5.607123e+02 -5.066679e+02   \n",
+      "Marital Status -7.838816e+02 -8.058409e+02 -6.592233e+02 -5.169161e+01   \n",
+      "Age             3.045311e+04  2.765407e+04  2.613765e+04  3.992042e+03   \n",
+      "Repay_Sept      1.295025e+04  1.234167e+04  1.184476e+04 -1.475495e+03   \n",
+      "Repay_Aug       1.711630e+04  1.611095e+04  1.564288e+04 -1.600241e+03   \n",
+      "Repay_July      1.749410e+04  1.638295e+04  1.584709e+04  2.566847e+01   \n",
+      "Repay_June      1.849642e+04  1.726555e+04  1.665159e+04 -1.812956e+02   \n",
+      "Repay_May       1.982293e+04  1.858659e+04  1.771569e+04 -1.142817e+02   \n",
+      "Repay_April     1.970555e+04  2.033812e+04  1.952488e+04 -2.850067e+01   \n",
+      "Bill_Sept       4.075286e+09  3.714795e+09  3.519876e+09  1.710894e+08   \n",
+      "Bill_Aug        4.086508e+09  3.720401e+09  3.524868e+09  3.305146e+08   \n",
+      "Bill_July       4.122238e+09  3.726780e+09  3.524247e+09  2.806565e+08   \n",
+      "Bill_June       4.138716e+09  3.677105e+09  3.451762e+09  2.482888e+08   \n",
+      "Bill_May        3.677105e+09  3.696294e+09  3.425914e+09  2.185501e+08   \n",
+      "Bill_April      3.451762e+09  3.425914e+09  3.546692e+09  1.972478e+08   \n",
+      "PrevAmt_Sept    2.482888e+08  2.185501e+08  1.972478e+08  2.743423e+08   \n",
+      "PrevAmt_Aug     3.076686e+08  2.538936e+08  2.369244e+08  1.089849e+08   \n",
+      "PrevAmt_July    3.398374e+08  2.700805e+08  2.451233e+08  7.354626e+07   \n",
+      "PrevAmt_June    1.312133e+08  2.791830e+08  2.334670e+08  5.178189e+07   \n",
+      "PrevAmt_May     1.576892e+08  1.315051e+08  2.799982e+08  3.756893e+07   \n",
+      "PrevAmt_April   2.031590e+08  1.774537e+08  1.222761e+08  5.469033e+07   \n",
+      "\n",
+      "                 PrevAmt_Aug  PrevAmt_July  PrevAmt_June   PrevAmt_May  \\\n",
+      "Credit Amount   5.333504e+08  4.801180e+08  4.131202e+08  4.305657e+08   \n",
+      "Gender         -1.567550e+01 -7.403481e+01 -1.708011e+01 -1.245881e+01   \n",
+      "Education      -5.625250e+02 -5.806080e+02 -4.776040e+02 -5.134324e+02   \n",
+      "Marital Status -9.732797e+01 -3.254608e+01 -1.035182e+02 -9.607709e+00   \n",
+      "Age             4.626862e+03  4.746824e+03  3.087324e+03  3.218052e+03   \n",
+      "Repay_Sept     -1.815138e+03 -1.396168e+03 -1.126848e+03 -9.991077e+02   \n",
+      "Repay_Aug      -1.627192e+03 -1.178331e+03 -8.788439e+02 -6.784685e+02   \n",
+      "Repay_July     -1.841953e+03 -1.123429e+03 -8.637622e+02 -6.557960e+02   \n",
+      "Repay_June     -5.235817e+01 -1.425205e+03 -7.960357e+02 -5.999916e+02   \n",
+      "Repay_May      -8.332449e+01  1.808121e+02 -1.034962e+03 -5.771610e+02   \n",
+      "Repay_April    -1.383995e+02  1.181210e+02  3.426237e+02 -8.158327e+02   \n",
+      "Bill_Sept       1.685692e+08  2.034048e+08  1.826164e+08  1.879091e+08   \n",
+      "Bill_Aug        1.653859e+08  1.888731e+08  1.643518e+08  1.717652e+08   \n",
+      "Bill_July       5.064226e+08  1.587478e+08  1.558003e+08  1.904126e+08   \n",
+      "Bill_June       3.076686e+08  3.398374e+08  1.312133e+08  1.576892e+08   \n",
+      "Bill_May        2.538936e+08  2.700805e+08  2.791830e+08  1.315051e+08   \n",
+      "Bill_April      2.369244e+08  2.451233e+08  2.334670e+08  2.799982e+08   \n",
+      "PrevAmt_Sept    1.089849e+08  7.354626e+07  5.178189e+07  3.756893e+07   \n",
+      "PrevAmt_Aug     5.308817e+08  9.929841e+07  6.501168e+07  6.368414e+07   \n",
+      "PrevAmt_July    9.929841e+07  3.100051e+08  5.966970e+07  4.282921e+07   \n",
+      "PrevAmt_June    6.501168e+07  5.966970e+07  2.454286e+08  3.634098e+07   \n",
+      "PrevAmt_May     6.368414e+07  4.282921e+07  3.634098e+07  2.334266e+08   \n",
+      "PrevAmt_April   6.456816e+07  5.093879e+07  4.395747e+07  4.207110e+07   \n",
+      "\n",
+      "                PrevAmt_April  \n",
+      "Credit Amount    5.065153e+08  \n",
+      "Gender          -2.405188e+01  \n",
+      "Education       -5.831578e+02  \n",
+      "Marital Status  -6.162327e+01  \n",
+      "Age              3.191904e+03  \n",
+      "Repay_Sept      -1.172194e+03  \n",
+      "Repay_Aug       -7.768350e+02  \n",
+      "Repay_July      -7.630260e+02  \n",
+      "Repay_June      -5.521373e+02  \n",
+      "Repay_May       -4.638926e+02  \n",
+      "Repay_April     -5.172163e+02  \n",
+      "Bill_Sept        2.347681e+08  \n",
+      "Bill_Aug         2.204845e+08  \n",
+      "Bill_July        2.247817e+08  \n",
+      "Bill_June        2.031590e+08  \n",
+      "Bill_May         1.774537e+08  \n",
+      "Bill_April       1.222761e+08  \n",
+      "PrevAmt_Sept     5.469033e+07  \n",
+      "PrevAmt_Aug      6.456816e+07  \n",
+      "PrevAmt_July     5.093879e+07  \n",
+      "PrevAmt_June     4.395747e+07  \n",
+      "PrevAmt_May      4.207110e+07  \n",
+      "PrevAmt_April    3.160383e+08  \n",
+      "\n",
+      "[23 rows x 23 columns]\n"
+     ]
+    }
+   ],
+   "source": [
+    "# looking at covariance estimation\n",
+    "covMat = features.cov()\n",
+    "print(covMat)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "((21000, 24), (9000, 24))"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    " # setting up 70/30 split for training and testing sets\n",
+    "#x_train, x_test, y_train, y_test = train_test_split(features, depVar, test_size = 0.3, random_state=15)\n",
+    "#x_train.shape, x_test.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[-1.13672015,  0.81016074,  0.21186989, ..., -0.31413612,\n",
+       "        -0.29338206,  1.87637834],\n",
+       "       [-0.3659805 ,  0.81016074,  0.21186989, ..., -0.31413612,\n",
+       "        -0.18087821,  1.87637834],\n",
+       "       [-0.59720239,  0.81016074,  0.21186989, ..., -0.24868274,\n",
+       "        -0.01212243, -0.53294156],\n",
+       "       ...,\n",
+       "       [-1.05964618, -1.23432296,  0.21186989, ..., -0.18322937,\n",
+       "        -0.11900109,  1.87637834],\n",
+       "       [-0.67427636, -1.23432296,  1.55508562, ...,  3.15253642,\n",
+       "        -0.19190359,  1.87637834],\n",
+       "       [-0.90549825, -1.23432296,  0.21186989, ..., -0.24868274,\n",
+       "        -0.23713013,  1.87637834]])"
+      ]
+     },
+     "execution_count": 14,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# # skipping this version of code\n",
+    "# feature scaling with preprocessing\n",
+    "#from sklearn import preprocessing\n",
+    "#x_scaled = preprocessing.scale(x_scaled)\n",
+    "#x_scaled"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[0.2729776  0.17527058 0.06488882 0.06159333 0.04330113 0.04055313\n",
+      " 0.03815797 0.03766063 0.036933   0.03626267 0.03260838 0.03051185\n",
+      " 0.02613646 0.02372952 0.02165589 0.01657249 0.01081774 0.01037367\n",
+      " 0.00786142 0.00549087 0.00292264 0.00169891 0.00105388 0.00096742]\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Skipping this code\n",
+    "# applying PCA\n",
+    "#from sklearn.decomposition import PCA\n",
+    "#pca = PCA(n_components = None)\n",
+    "#x_train = pca.fit_transform(x_train)\n",
+    "#x_test = pca.transform(x_test)\n",
+    "#explained_variance = pca.explained_variance_ratio_\n",
+    "#print(explained_variance)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# importing dimension reduction (from the PCA Sandbox code)\n",
+    "from sklearn.preprocessing import StandardScaler\n",
+    "from sklearn.decomposition import PCA"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "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\n",
+      "text/plain": [
+       "<matplotlib.figure.Figure at 0x1a07b6155f8>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "# PCA variance plot (PCA Sandbox code)\n",
+    "X = StandardScaler().fit_transform(features)\n",
+    "pca = PCA()\n",
+    "pca.fit(X)\n",
+    "pcaFeatures = range(pca.n_components_)\n",
+    "plt.bar(pcaFeatures, pca.explained_variance_ratio_)\n",
+    "plt.xticks(pcaFeatures)\n",
+    "plt.ylabel('Variance')\n",
+    "plt.xlabel('PCA Feature')\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Explained variance by compontent [0.2844729  0.17840528 0.06761458 0.06415206 0.04454598 0.04154168\n",
+      " 0.03930757 0.038606   0.03783951 0.03403    0.03186035 0.02965021\n",
+      " 0.02482231 0.02259901 0.01754763 0.0112993  0.01083921 0.00820398\n",
+      " 0.00572989 0.00305004 0.00177325 0.00109972 0.00100955]\n",
+      "    Credit Amount    Gender  Education  Marital Status       Age  Repay_Sept  \\\n",
+      "0        0.068510 -0.021664   0.018184       -0.005590  0.014221    0.161108   \n",
+      "1        0.316476  0.030518  -0.099819       -0.042470  0.065629   -0.297893   \n",
+      "2        0.015255  0.026409  -0.332918        0.471772 -0.482644   -0.016878   \n",
+      "3        0.069168 -0.075567   0.238387       -0.420472  0.438942    0.013981   \n",
+      "4       -0.145151  0.892429   0.343402       -0.057207 -0.162759   -0.035271   \n",
+      "5       -0.377547 -0.375411   0.535448        0.272388 -0.087463   -0.045146   \n",
+      "6        0.139675  0.072034  -0.423793       -0.173967  0.085603   -0.084732   \n",
+      "7       -0.046314 -0.023606   0.055862        0.018365 -0.009739    0.018684   \n",
+      "8        0.041372  0.023091  -0.185846       -0.069370  0.052744   -0.035261   \n",
+      "9        0.009719  0.024332   0.069265        0.041104  0.007136    0.005732   \n",
+      "10       0.008175 -0.009173   0.000563       -0.011308 -0.021187    0.046812   \n",
+      "11      -0.085655  0.055062  -0.188063       -0.145065 -0.049053    0.626016   \n",
+      "12       0.350071  0.177175   0.081739        0.669854  0.581949    0.152972   \n",
+      "13      -0.754705  0.111146  -0.387659        0.118491  0.428087   -0.090269   \n",
+      "14      -0.026614  0.025102  -0.038670        0.005364  0.025157   -0.607173   \n",
+      "15       0.042927 -0.000274   0.010053        0.006692  0.001193   -0.242537   \n",
+      "16      -0.023886  0.021063  -0.037267       -0.014079  0.000155    0.015895   \n",
+      "17       0.006202 -0.003689   0.004235       -0.005596 -0.005665    0.135093   \n",
+      "18       0.006871 -0.002007   0.001885       -0.000707 -0.005718   -0.032872   \n",
+      "19      -0.010214  0.001871  -0.003674       -0.002632  0.000184   -0.005067   \n",
+      "20       0.014474 -0.000658   0.000383       -0.000217 -0.001545   -0.000326   \n",
+      "21      -0.000479 -0.000825   0.002032        0.000746 -0.000166   -0.002806   \n",
+      "22       0.002770  0.000867   0.001618       -0.001178  0.000296    0.000220   \n",
+      "\n",
+      "    Repay_Aug  Repay_July  Repay_June  Repay_May      ...        Bill_July  \\\n",
+      "0    0.194149    0.200245    0.207070   0.210990      ...         0.349768   \n",
+      "1   -0.334559   -0.343595   -0.344245  -0.331230      ...         0.146113   \n",
+      "2    0.016904    0.059231    0.085428   0.105002      ...        -0.079708   \n",
+      "3    0.049410    0.085796    0.111958   0.119004      ...        -0.107928   \n",
+      "4   -0.037951   -0.023850   -0.007488   0.002378      ...         0.029397   \n",
+      "5   -0.067582   -0.073320   -0.087689  -0.084405      ...         0.086874   \n",
+      "6   -0.087232   -0.014145    0.046894   0.111909      ...        -0.010384   \n",
+      "7    0.013417   -0.025920   -0.053501  -0.028842      ...        -0.128794   \n",
+      "8   -0.037262   -0.010874    0.049225   0.064301      ...         0.074513   \n",
+      "9    0.008114   -0.025054   -0.059376   0.063147      ...        -0.121636   \n",
+      "10   0.029447   -0.106486   -0.007845   0.009349      ...         0.099962   \n",
+      "11   0.377486    0.101013   -0.209208  -0.356187      ...         0.012231   \n",
+      "12   0.079251    0.050700    0.017613  -0.023257      ...        -0.019157   \n",
+      "13  -0.080756   -0.085466   -0.061186  -0.020302      ...         0.040610   \n",
+      "14   0.321581    0.541544    0.170652  -0.179074      ...         0.035528   \n",
+      "15   0.558819   -0.106308   -0.585416  -0.077430      ...        -0.011981   \n",
+      "16  -0.070126   -0.157531    0.075185   0.145330      ...         0.111455   \n",
+      "17  -0.485029    0.606688   -0.228481  -0.384702      ...         0.039257   \n",
+      "18   0.138679   -0.304985    0.567349  -0.674927      ...        -0.017897   \n",
+      "19  -0.031099    0.025279    0.019223   0.027265      ...        -0.483461   \n",
+      "20   0.012676   -0.028048    0.001786   0.023392      ...         0.497018   \n",
+      "21   0.003188   -0.008470    0.013994  -0.008254      ...        -0.085500   \n",
+      "22  -0.000022   -0.004848   -0.001413  -0.000613      ...        -0.526249   \n",
+      "\n",
+      "    Bill_June  Bill_May  Bill_April  PrevAmt_Sept  PrevAmt_Aug  PrevAmt_July  \\\n",
+      "0    0.353879  0.351752    0.344517      0.094226     0.078676      0.086387   \n",
+      "1    0.145368  0.143677    0.141763      0.149008     0.139743      0.151491   \n",
+      "2   -0.066621 -0.053498   -0.044986      0.267007     0.285267      0.265781   \n",
+      "3   -0.103079 -0.090398   -0.085091      0.294565     0.326338      0.292135   \n",
+      "4    0.023264  0.024494    0.013032      0.092006     0.107864      0.036795   \n",
+      "5    0.069144  0.032467   -0.017501      0.250461     0.269562      0.156273   \n",
+      "6    0.061185  0.075958   -0.060850      0.191798     0.071276      0.215555   \n",
+      "7   -0.035896  0.116500    0.160933     -0.265084    -0.225831      0.236009   \n",
+      "8    0.028150 -0.065245    0.079400      0.035790     0.387011     -0.018824   \n",
+      "9    0.123620 -0.005387    0.013944     -0.235642    -0.279415      0.784837   \n",
+      "10   0.033999  0.046832   -0.006054     -0.728275     0.597232      0.025334   \n",
+      "11  -0.014864 -0.042947   -0.060698      0.112681     0.103455      0.138416   \n",
+      "12  -0.035809 -0.036279   -0.047610      0.000005     0.029335     -0.024739   \n",
+      "13   0.047797  0.058956    0.073147     -0.004591    -0.004456      0.019073   \n",
+      "14  -0.009680 -0.055623   -0.075189     -0.088337     0.041748      0.080628   \n",
+      "15  -0.053070 -0.035576   -0.017187      0.050743     0.033861     -0.046337   \n",
+      "16  -0.201318 -0.409702   -0.479383     -0.046697     0.031695      0.128923   \n",
+      "17  -0.041043 -0.057158   -0.046917     -0.065009     0.045984      0.028096   \n",
+      "18  -0.008948 -0.016387    0.024724      0.018547    -0.021853      0.050712   \n",
+      "19  -0.521522  0.068325    0.513807      0.043497     0.146609      0.001201   \n",
+      "20  -0.488455 -0.250019    0.338300     -0.067313    -0.070720      0.123519   \n",
+      "21  -0.363310  0.718583   -0.426533     -0.044567     0.037988      0.026423   \n",
+      "22   0.345587 -0.226257    0.071318     -0.084600     0.124444     -0.063085   \n",
+      "\n",
+      "    PrevAmt_June  PrevAmt_May  PrevAmt_April  \n",
+      "0       0.077790     0.075345       0.069932  \n",
+      "1       0.141296     0.137157       0.129438  \n",
+      "2       0.224463     0.185359       0.200332  \n",
+      "3       0.248694     0.185461       0.215991  \n",
+      "4       0.017136    -0.059035      -0.060575  \n",
+      "5      -0.053283    -0.282810      -0.233635  \n",
+      "6       0.021998    -0.716667      -0.295417  \n",
+      "7       0.653537     0.169983      -0.537660  \n",
+      "8      -0.438402     0.445582      -0.616394  \n",
+      "9      -0.433209     0.057925       0.109958  \n",
+      "10      0.073802    -0.184468       0.161113  \n",
+      "11      0.025936    -0.044591      -0.050270  \n",
+      "12      0.001280    -0.070561      -0.073090  \n",
+      "13      0.042819     0.089989       0.136529  \n",
+      "14      0.040018    -0.032702      -0.039756  \n",
+      "15     -0.048833     0.008570      -0.007483  \n",
+      "16      0.124263     0.066241      -0.092101  \n",
+      "17     -0.023609     0.016764       0.005263  \n",
+      "18     -0.048381     0.000203       0.000451  \n",
+      "19     -0.111828    -0.100399       0.034700  \n",
+      "20      0.002581    -0.069475       0.027362  \n",
+      "21     -0.081238     0.094909      -0.017243  \n",
+      "22      0.042033    -0.008188       0.008304  \n",
+      "\n",
+      "[23 rows x 23 columns]\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Looking further into PCA\n",
+    "print('Explained variance by compontent %s' % pca.explained_variance_ratio_)\n",
+    "print(pd.DataFrame(pca.components_, columns = features.columns.values.tolist()))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "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\n",
+      "text/plain": [
+       "<matplotlib.figure.Figure at 0x1a07b70e278>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "# reviewing with 4 components \n",
+    "# PCA variance plot (PCA Sandbox code)\n",
+    "X = StandardScaler().fit_transform(features)\n",
+    "pca = PCA(n_components = 4)\n",
+    "pca.fit(X)\n",
+    "pcaFeatures = range(pca.n_components_)\n",
+    "plt.bar(pcaFeatures, pca.explained_variance_ratio_)\n",
+    "plt.xticks(pcaFeatures)\n",
+    "plt.ylabel('Variance')\n",
+    "plt.xlabel('PCA Feature')\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[[-1.13672015  0.81016074  0.21186989 ... -0.30806256 -0.31413612\n",
+      "  -0.29338206]\n",
+      " [-0.3659805   0.81016074  0.21186989 ... -0.24422965 -0.31413612\n",
+      "  -0.18087821]\n",
+      " [-0.59720239  0.81016074  0.21186989 ... -0.24422965 -0.24868274\n",
+      "  -0.01212243]\n",
+      " ...\n",
+      " [-1.05964618 -1.23432296  0.21186989 ... -0.03996431 -0.18322937\n",
+      "  -0.11900109]\n",
+      " [-0.67427636 -1.23432296  1.55508562 ... -0.18512036  3.15253642\n",
+      "  -0.19190359]\n",
+      " [-0.90549825 -1.23432296  0.21186989 ... -0.24422965 -0.24868274\n",
+      "  -0.23713013]]\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Standardizing features\n",
+    "X= StandardScaler().fit_transform(features)\n",
+    "print(X)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "       component 1  component 2  component 3  component 4\n",
+      "0        -1.887702    -0.909991    -0.476783    -0.545452\n",
+      "1        -0.764242    -2.110344     1.118656    -0.429762\n",
+      "2        -0.847054    -1.075068     0.425762    -0.408444\n",
+      "3        -0.196253    -0.814061    -0.833924     0.253797\n",
+      "4        -0.840628    -0.080256    -1.111606     2.271124\n",
+      "5        -0.183492    -0.825150     0.423638    -0.759497\n",
+      "6        14.105689     7.072664     0.416364    -2.445176\n",
+      "7        -1.856714    -0.534123     0.871482    -1.066432\n",
+      "8        -0.660379    -1.726756    -0.502624     0.629213\n",
+      "9        -2.826337     1.263877    -0.389360    -0.357066\n",
+      "10       -0.976958    -1.422533     0.024346     0.080397\n",
+      "11       -1.013996     0.929261     0.827312     0.986885\n",
+      "12       -1.661862     1.670123     0.076470     0.161113\n",
+      "13        1.571630    -2.630996     0.583294    -0.427879\n",
+      "14        0.707139    -0.001961     0.856651    -1.093847\n",
+      "15        0.067926    -2.123750     1.277329    -1.573220\n",
+      "16        0.561829    -3.539476     1.914529    -0.400593\n",
+      "17        4.819481     5.416871     2.215548     3.820742\n",
+      "18       -2.869194     2.176778    -1.459487     0.170014\n",
+      "19       -3.005793     1.513860     0.472066    -1.687115\n",
+      "20       -0.752288    -0.539714    -0.057632     0.413361\n",
+      "21       -2.383647     0.514277    -1.027668     0.280063\n",
+      "22        1.377760    -3.055831     1.141686    -0.433072\n",
+      "23       -3.012988     3.377092    -0.621051     0.077334\n",
+      "24       -1.340593    -0.877469     1.515759    -0.953821\n",
+      "25       -0.245186    -1.228616     0.312028    -0.712507\n",
+      "26       -2.309883     0.021978     0.852225    -1.290370\n",
+      "27       -0.800954    -1.336642     0.132362    -0.355970\n",
+      "28       -1.982405     0.687018    -1.392356     1.487361\n",
+      "29       -0.892890    -1.195925     1.199317    -1.015345\n",
+      "...            ...          ...          ...          ...\n",
+      "29970    -0.009283     2.249913     1.699883     2.217524\n",
+      "29971     0.921860    -0.465293    -1.378193     0.511979\n",
+      "29972     0.800458     1.583490     1.899809     2.482283\n",
+      "29973    -2.890732     1.563624    -1.245123    -0.088484\n",
+      "29974    -0.056591    -3.325591    -0.427668     1.143764\n",
+      "29975    -1.906060     1.088151    -1.060337     0.763511\n",
+      "29976     2.466818    -4.380356     0.096323     0.895797\n",
+      "29977     3.382434     1.617943     0.296869    -1.305445\n",
+      "29978     6.111519     2.586732    -1.733583    -0.652339\n",
+      "29979    -3.376198     2.349015    -0.587815    -0.633165\n",
+      "29980    -0.025799    -0.882853    -0.408247     0.479271\n",
+      "29981     0.704475    -2.959643    -0.963179     1.233367\n",
+      "29982    -0.976183    -1.132682    -0.605191     0.694707\n",
+      "29983    -3.200989     2.136789    -1.402825     0.458929\n",
+      "29984    -2.461418     0.547207    -0.038831    -0.385607\n",
+      "29985    -3.358325     2.399867     0.425273    -1.499177\n",
+      "29986    -2.971664     2.188131     0.166284    -1.140235\n",
+      "29987     1.114026     0.543608     2.106132     0.715732\n",
+      "29988     6.355624     2.979904    -0.336484    -0.464429\n",
+      "29989    -2.443020     0.911676     0.503314    -0.839259\n",
+      "29990     2.087144     0.357630    -1.463999     0.090332\n",
+      "29991     0.951935    -4.665566     0.045472     1.503236\n",
+      "29992    -2.352584     0.136531    -1.985457     0.687031\n",
+      "29993     0.376194     0.784103     1.806215     0.858835\n",
+      "29994     3.234020    -3.633828     0.699924     0.137279\n",
+      "29995     2.523780     0.668947    -1.722582     0.455976\n",
+      "29996    -1.774672    -0.073840    -0.481823     0.542519\n",
+      "29997     0.357967    -3.313805     0.582469     0.508343\n",
+      "29998     0.650889     0.698699     0.336362     2.947970\n",
+      "29999    -0.145223    -0.815582    -1.363082     0.833617\n",
+      "\n",
+      "[30000 rows x 4 columns]\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Execute PCA and DF with the intent of visualizing\n",
+    "pca = PCA(n_components=4)\n",
+    "principalComponents = pca.fit_transform(X)\n",
+    "principalDF = pd.DataFrame(data = principalComponents,\n",
+    "                          columns = ['component 1', 'component 2', 'component 3', 'component 4'])\n",
+    "                                     \n",
+    "print(principalDF)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 73,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<class 'pandas.core.frame.DataFrame'>\n",
+      "RangeIndex: 30000 entries, 0 to 29999\n",
+      "Data columns (total 1 columns):\n",
+      "Default    30000 non-null int64\n",
+      "dtypes: int64(1)\n",
+      "memory usage: 234.5 KB\n"
+     ]
+    }
+   ],
+   "source": [
+    "# render depVar a DF so we can concat or merger\n",
+    "yy = pd.DataFrame(data = depVar, columns = ['Default'])\n",
+    "yy.describe()\n",
+    "yy.info()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 52,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>component 1</th>\n",
+       "      <th>component 2</th>\n",
+       "      <th>component 3</th>\n",
+       "      <th>component 4</th>\n",
+       "      <th>Default</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>-1.887702</td>\n",
+       "      <td>-0.909991</td>\n",
+       "      <td>-0.476783</td>\n",
+       "      <td>-0.545452</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>-0.764242</td>\n",
+       "      <td>-2.110344</td>\n",
+       "      <td>1.118656</td>\n",
+       "      <td>-0.429762</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>-0.847054</td>\n",
+       "      <td>-1.075068</td>\n",
+       "      <td>0.425762</td>\n",
+       "      <td>-0.408444</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>-0.196253</td>\n",
+       "      <td>-0.814061</td>\n",
+       "      <td>-0.833924</td>\n",
+       "      <td>0.253797</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>-0.840628</td>\n",
+       "      <td>-0.080256</td>\n",
+       "      <td>-1.111606</td>\n",
+       "      <td>2.271124</td>\n",
+       "      <td>0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   component 1  component 2  component 3  component 4  Default\n",
+       "0    -1.887702    -0.909991    -0.476783    -0.545452        1\n",
+       "1    -0.764242    -2.110344     1.118656    -0.429762        1\n",
+       "2    -0.847054    -1.075068     0.425762    -0.408444        0\n",
+       "3    -0.196253    -0.814061    -0.833924     0.253797        0\n",
+       "4    -0.840628    -0.080256    -1.111606     2.271124        0"
+      ]
+     },
+     "execution_count": 52,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# create final dataframe for visualization\n",
+    "finalCredit = pd.concat([principalDF, yy], axis = 1)\n",
+    "finalCredit.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([0.2844729 , 0.17840527, 0.06761393, 0.06415099])"
+      ]
+     },
+     "execution_count": 19,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "pca.explained_variance_ratio_"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 53,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<class 'pandas.core.frame.DataFrame'>\n",
+      "RangeIndex: 30000 entries, 0 to 29999\n",
+      "Data columns (total 5 columns):\n",
+      "component 1    30000 non-null float64\n",
+      "component 2    30000 non-null float64\n",
+      "component 3    30000 non-null float64\n",
+      "component 4    30000 non-null float64\n",
+      "Default        30000 non-null int64\n",
+      "dtypes: float64(4), int64(1)\n",
+      "memory usage: 1.1 MB\n"
+     ]
+    }
+   ],
+   "source": [
+    "finalCredit.info()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 74,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "((21000, 4), (9000, 4))"
+      ]
+     },
+     "execution_count": 74,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    " # setting up 70/30 split for training and testing sets\n",
+    "x_train, x_test, y_train, y_test = train_test_split(principalDF, yy, test_size = 0.3, random_state=0)\n",
+    "x_train.shape, x_test.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 69,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<class 'pandas.core.frame.DataFrame'>\n",
+      "Int64Index: 9000 entries, 8225 to 6465\n",
+      "Data columns (total 5 columns):\n",
+      "component 1    9000 non-null float64\n",
+      "component 2    9000 non-null float64\n",
+      "component 3    9000 non-null float64\n",
+      "component 4    9000 non-null float64\n",
+      "Default        9000 non-null float64\n",
+      "dtypes: float64(5)\n",
+      "memory usage: 421.9 KB\n"
+     ]
+    }
+   ],
+   "source": [
+    "x_test.info()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 61,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<class 'pandas.core.frame.DataFrame'>\n",
+      "Int64Index: 21000 entries, 15925 to 2732\n",
+      "Data columns (total 5 columns):\n",
+      "component 1    21000 non-null float64\n",
+      "component 2    21000 non-null float64\n",
+      "component 3    21000 non-null float64\n",
+      "component 4    21000 non-null float64\n",
+      "Default        21000 non-null int64\n",
+      "dtypes: float64(4), int64(1)\n",
+      "memory usage: 984.4 KB\n"
+     ]
+    }
+   ],
+   "source": [
+    "x_train.info()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "metadata": {},
+   "outputs": [
+    {
+     "ename": "ValueError",
+     "evalue": "Found input variables with inconsistent numbers of samples: [30000, 21000]",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[1;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[1;31mValueError\u001b[0m                                Traceback (most recent call last)",
+      "\u001b[1;32m<ipython-input-27-1f7c0bbad3f4>\u001b[0m in \u001b[0;36m<module>\u001b[1;34m()\u001b[0m\n\u001b[1;32m----> 1\u001b[1;33m \u001b[0mmodelSVM\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mfit\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mx_train\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0my_train\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m",
+      "\u001b[1;32m~\\Anaconda3\\lib\\site-packages\\sklearn\\svm\\base.py\u001b[0m in \u001b[0;36mfit\u001b[1;34m(self, X, y, sample_weight)\u001b[0m\n\u001b[0;32m    147\u001b[0m         \u001b[0mself\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0m_sparse\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0msparse\u001b[0m \u001b[1;32mand\u001b[0m \u001b[1;32mnot\u001b[0m \u001b[0mcallable\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mself\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mkernel\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    148\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m--> 149\u001b[1;33m         \u001b[0mX\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0my\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mcheck_X_y\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mX\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0my\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mdtype\u001b[0m\u001b[1;33m=\u001b[0m\u001b[0mnp\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mfloat64\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0morder\u001b[0m\u001b[1;33m=\u001b[0m\u001b[1;34m'C'\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0maccept_sparse\u001b[0m\u001b[1;33m=\u001b[0m\u001b[1;34m'csr'\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m    150\u001b[0m         \u001b[0my\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mself\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0m_validate_targets\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0my\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    151\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m~\\Anaconda3\\lib\\site-packages\\sklearn\\utils\\validation.py\u001b[0m in \u001b[0;36mcheck_X_y\u001b[1;34m(X, y, accept_sparse, dtype, order, copy, force_all_finite, ensure_2d, allow_nd, multi_output, ensure_min_samples, ensure_min_features, y_numeric, warn_on_dtype, estimator)\u001b[0m\n\u001b[0;32m    581\u001b[0m         \u001b[0my\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0my\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mastype\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mnp\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mfloat64\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    582\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m--> 583\u001b[1;33m     \u001b[0mcheck_consistent_length\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mX\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0my\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m    584\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    585\u001b[0m     \u001b[1;32mreturn\u001b[0m \u001b[0mX\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0my\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m~\\Anaconda3\\lib\\site-packages\\sklearn\\utils\\validation.py\u001b[0m in \u001b[0;36mcheck_consistent_length\u001b[1;34m(*arrays)\u001b[0m\n\u001b[0;32m    202\u001b[0m     \u001b[1;32mif\u001b[0m \u001b[0mlen\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0muniques\u001b[0m\u001b[1;33m)\u001b[0m \u001b[1;33m>\u001b[0m \u001b[1;36m1\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    203\u001b[0m         raise ValueError(\"Found input variables with inconsistent numbers of\"\n\u001b[1;32m--> 204\u001b[1;33m                          \" samples: %r\" % [int(l) for l in lengths])\n\u001b[0m\u001b[0;32m    205\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m    206\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;31mValueError\u001b[0m: Found input variables with inconsistent numbers of samples: [30000, 21000]"
+     ]
+    }
+   ],
+   "source": [
+    "# skipping this version of code\n",
+    "#modelSVM.fit(x_train, y_train)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(21000,)"
+      ]
+     },
+     "execution_count": 24,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#y_train.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 33,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(21000, 24)"
+      ]
+     },
+     "execution_count": 33,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#x_train.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[-0.67540558, -1.23759669,  1.56606282, ..., -0.31518194,\n",
+       "        -0.3017609 ,  1.87824751],\n",
+       "       [ 0.01654093,  0.80801767, -1.13127729, ...,  0.04694546,\n",
+       "        -0.24287648,  1.87824751],\n",
+       "       [ 0.47783861, -1.23759669, -1.13127729, ..., -0.31518194,\n",
+       "        -0.3017609 ,  1.87824751],\n",
+       "       ...,\n",
+       "       [-0.3678738 ,  0.80801767,  0.21739277, ..., -0.31518194,\n",
+       "        -0.24305313,  1.87824751],\n",
+       "       [-1.05982031,  0.80801767,  1.56606282, ..., -0.29542954,\n",
+       "        -0.24287648, -0.53241119],\n",
+       "       [-0.75228853, -1.23759669,  0.21739277, ..., -0.31518194,\n",
+       "        -0.22521115, -0.53241119]])"
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# rerunning to try to figure out x_train with 3000 samples - feature scaling with preprocessing\n",
+    "#from sklearn import preprocessing\n",
+    "#x_scaled = preprocessing.scale(x_train)\n",
+    "#x_scaled"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[6.10777929e-01 2.94938460e-01 3.03177159e-02 1.74451190e-02\n",
+      " 9.90578230e-03 9.05250450e-03 7.45119998e-03 6.30080948e-03\n",
+      " 5.38135479e-03 2.92249409e-03 2.41516796e-03 1.67320025e-03\n",
+      " 1.41826066e-03 1.80557270e-09 9.37645372e-11 1.92736761e-11\n",
+      " 1.17640212e-11 1.07823555e-11 7.79667126e-12 5.77769414e-12\n",
+      " 5.32550050e-12 4.66483763e-12 3.83078756e-12 3.26160345e-12]\n"
+     ]
+    }
+   ],
+   "source": [
+    "## applying PCA\n",
+    "#from sklearn.decomposition import PCA\n",
+    "#pca = PCA(n_components = None)\n",
+    "#x_train = pca.fit_transform(x_train)\n",
+    "#x_test = pca.transform(x_test)\n",
+    "#explained_variance = pca.explained_variance_ratio_\n",
+    "#print(explained_variance)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(21000, 24)"
+      ]
+     },
+     "execution_count": 10,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#x_train.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "SVC(C=1.0, cache_size=200, class_weight=None, coef0=0.0,\n",
+       "  decision_function_shape='ovr', degree=3, gamma='auto', kernel='rbf',\n",
+       "  max_iter=-1, probability=False, random_state=None, shrinking=True,\n",
+       "  tol=0.001, verbose=False)"
+      ]
+     },
+     "execution_count": 11,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# skipping this version of code\n",
+    "#modelSVM.fit(x_train, y_train)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# skipping this version of code\n",
+    "# predicting with SVM model\n",
+    "#y_pred = modelSVM.predict(x_test)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# skipping this version of code\n",
+    "#cmSVM = confusion_matrix(y_test, y_pred)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {},
+   "outputs": [
+    {
+     "ename": "MemoryError",
+     "evalue": "",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[1;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[1;31mMemoryError\u001b[0m                               Traceback (most recent call last)",
+      "\u001b[1;32m<ipython-input-14-0034d934a385>\u001b[0m in \u001b[0;36m<module>\u001b[1;34m()\u001b[0m\n\u001b[0;32m      1\u001b[0m \u001b[0mX_set\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0my_set\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mx_train\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0my_train\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m      2\u001b[0m X1, X2 = np.meshgrid(np.arange(start = X_set[:, 0].min() - 1, stop = X_set[:, 0].max() + 1, step = 0.01),\n\u001b[1;32m----> 3\u001b[1;33m                      np.arange(start = X_set[:, 1].min() - 1, stop = X_set[:, 1].max() + 1, step = 0.01))\n\u001b[0m\u001b[0;32m      4\u001b[0m plt.contourf(X1, X2, modelSVM.predict(np.array([X1.ravel(), X2.ravel()]).T).reshape(X1.shape),\n\u001b[0;32m      5\u001b[0m              alpha = 0.75, cmap = ListedColormap(('red', 'green')))\n",
+      "\u001b[1;32m~\\Anaconda3\\lib\\site-packages\\numpy\\lib\\function_base.py\u001b[0m in \u001b[0;36mmeshgrid\u001b[1;34m(*xi, **kwargs)\u001b[0m\n\u001b[0;32m   4696\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m   4697\u001b[0m     \u001b[1;32mif\u001b[0m \u001b[0mcopy_\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m-> 4698\u001b[1;33m         \u001b[0moutput\u001b[0m \u001b[1;33m=\u001b[0m \u001b[1;33m[\u001b[0m\u001b[0mx\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mcopy\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m)\u001b[0m \u001b[1;32mfor\u001b[0m \u001b[0mx\u001b[0m \u001b[1;32min\u001b[0m \u001b[0moutput\u001b[0m\u001b[1;33m]\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m   4699\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m   4700\u001b[0m     \u001b[1;32mreturn\u001b[0m \u001b[0moutput\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;32m~\\Anaconda3\\lib\\site-packages\\numpy\\lib\\function_base.py\u001b[0m in \u001b[0;36m<listcomp>\u001b[1;34m(.0)\u001b[0m\n\u001b[0;32m   4696\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m   4697\u001b[0m     \u001b[1;32mif\u001b[0m \u001b[0mcopy_\u001b[0m\u001b[1;33m:\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m-> 4698\u001b[1;33m         \u001b[0moutput\u001b[0m \u001b[1;33m=\u001b[0m \u001b[1;33m[\u001b[0m\u001b[0mx\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mcopy\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m)\u001b[0m \u001b[1;32mfor\u001b[0m \u001b[0mx\u001b[0m \u001b[1;32min\u001b[0m \u001b[0moutput\u001b[0m\u001b[1;33m]\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m   4699\u001b[0m \u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m   4700\u001b[0m     \u001b[1;32mreturn\u001b[0m \u001b[0moutput\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;31mMemoryError\u001b[0m: "
+     ]
+    }
+   ],
+   "source": [
+    "# copied from L. Hollman's code, hoping that something works\n",
+    "X_set, y_set = x_train, y_train\n",
+    "X1, X2 = np.meshgrid(np.arange(start = X_set[:, 0].min() - 1, stop = X_set[:, 0].max() + 1, step = 0.01),\n",
+    "                     np.arange(start = X_set[:, 1].min() - 1, stop = X_set[:, 1].max() + 1, step = 0.01))\n",
+    "plt.contourf(X1, X2, modelSVM.predict(np.array([X1.ravel(), X2.ravel()]).T).reshape(X1.shape),\n",
+    "             alpha = 0.75, cmap = ListedColormap(('red', 'green')))\n",
+    "plt.xlim(X1.min(), X1.max())\n",
+    "plt.ylim(X2.min(), X2.max())\n",
+    "for i, j in enumerate(np.unique(y_set)):\n",
+    "    plt.scatter(X_set[y_set == j, 0], X_set[y_set == j, 1],\n",
+    "                c = ListedColormap(('red', 'green'))(i), label = j)\n",
+    "plt.title('SVM (Training set)')\n",
+    "plt.xlabel('Age')\n",
+    "plt.ylabel('Estimated Salary')\n",
+    "plt.legend()\n",
+    "plt.show()\n",
+    "\n",
+    "# Visualising the Test set results\n",
+    "from matplotlib.colors import ListedColormap\n",
+    "X_set, y_set = x_test, y_test\n",
+    "X1, X2 = np.meshgrid(np.arange(start = X_set[:, 0].min() - 1, stop = X_set[:, 0].max() + 1, step = 0.01),\n",
+    "                     np.arange(start = X_set[:, 1].min() - 1, stop = X_set[:, 1].max() + 1, step = 0.01))\n",
+    "plt.contourf(X1, X2, modelSVM.predict(np.array([X1.ravel(), X2.ravel()]).T).reshape(X1.shape),\n",
+    "             alpha = 0.75, cmap = ListedColormap(('red', 'green')))\n",
+    "plt.xlim(X1.min(), X1.max())\n",
+    "plt.ylim(X2.min(), X2.max())\n",
+    "for i, j in enumerate(np.unique(y_set)):\n",
+    "    plt.scatter(X_set[y_set == j, 0], X_set[y_set == j, 1],\n",
+    "                c = ListedColormap(('red', 'green'))(i), label = j)\n",
+    "plt.title('SVM (Test set)')\n",
+    "plt.xlabel('Age')\n",
+    "plt.ylabel('Estimated Salary')\n",
+    "plt.legend()\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[[6985   17]\n",
+      " [1962   36]]\n"
+     ]
+    }
+   ],
+   "source": [
+    "#print(cmSVM)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 75,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# using SVC version of SVM model\n",
+    "# import SVC and build model\n",
+    "from sklearn.svm import SVC"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 76,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "C:\\Users\\joann\\Anaconda3\\lib\\site-packages\\sklearn\\utils\\validation.py:578: DataConversionWarning: A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel().\n",
+      "  y = column_or_1d(y, warn=True)\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "SVC(C=1.0, cache_size=200, class_weight=None, coef0=0.0,\n",
+       "  decision_function_shape='ovr', degree=3, gamma='auto', kernel='linear',\n",
+       "  max_iter=-1, probability=False, random_state=0, shrinking=True,\n",
+       "  tol=0.001, verbose=False)"
+      ]
+     },
+     "execution_count": 76,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# setting up model\n",
+    "modelSVM2 = SVC(kernel = 'linear', random_state = 0)\n",
+    "modelSVM2.fit(x_train, y_train)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 77,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# predicting the test set results\n",
+    "y_predSVM2 = modelSVM2.predict(x_test)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 78,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[[7060    0]\n",
+      " [1940    0]]\n"
+     ]
+    }
+   ],
+   "source": [
+    "# making confusion matrix\n",
+    "from sklearn.metrics import confusion_matrix\n",
+    "cm = confusion_matrix(y_test, y_predSVM2)\n",
+    "print(cm)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 79,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.7844444444444445\n"
+     ]
+    }
+   ],
+   "source": [
+    "# get accuracy score\n",
+    "print(accuracy_score(y_test, y_predSVM2))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 82,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.0\n"
+     ]
+    }
+   ],
+   "source": [
+    "# get kappa\n",
+    "print(cohen_kappa_score(y_test, y_predSVM2))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 62,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#finalCredit['Default'] = finalCredit['Default'].astype('float')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 63,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<class 'pandas.core.frame.DataFrame'>\n",
+      "RangeIndex: 30000 entries, 0 to 29999\n",
+      "Data columns (total 5 columns):\n",
+      "component 1    30000 non-null float64\n",
+      "component 2    30000 non-null float64\n",
+      "component 3    30000 non-null float64\n",
+      "component 4    30000 non-null float64\n",
+      "Default        30000 non-null float64\n",
+      "dtypes: float64(5)\n",
+      "memory usage: 1.1 MB\n"
+     ]
+    }
+   ],
+   "source": [
+    "#finalCredit.info()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 83,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "C:\\Users\\joann\\Anaconda3\\lib\\site-packages\\sklearn\\utils\\validation.py:578: DataConversionWarning: A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel().\n",
+      "  y = column_or_1d(y, warn=True)\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "SVC(C=1.0, cache_size=200, class_weight=None, coef0=0.0,\n",
+       "  decision_function_shape='ovr', degree=3, gamma='auto', kernel='rbf',\n",
+       "  max_iter=-1, probability=False, random_state=0, shrinking=True,\n",
+       "  tol=0.001, verbose=False)"
+      ]
+     },
+     "execution_count": 83,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# tuning the model\n",
+    "modelSVMrbf = SVC(kernel = 'rbf', random_state = 0)\n",
+    "modelSVMrbf.fit(x_train, y_train)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 84,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# predicting the test set results\n",
+    "y_predSVMrbf = modelSVMrbf.predict(x_test)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 86,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[[6749  311]\n",
+      " [1434  506]]\n"
+     ]
+    }
+   ],
+   "source": [
+    "# making confusion matrix\n",
+    "from sklearn.metrics import confusion_matrix\n",
+    "cm = confusion_matrix(y_test, y_predSVMrbf)\n",
+    "print(cm)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 87,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.8061111111111111\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(accuracy_score(y_test, y_predSVMrbf))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 88,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.2743625664416829\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(cohen_kappa_score(y_test, y_predSVMrbf))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 90,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "C:\\Users\\joann\\Anaconda3\\lib\\site-packages\\sklearn\\utils\\validation.py:578: DataConversionWarning: A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel().\n",
+      "  y = column_or_1d(y, warn=True)\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "SVC(C=1.0, cache_size=200, class_weight=None, coef0=0.0,\n",
+       "  decision_function_shape='ovr', degree=3, gamma=0.7, kernel='rbf',\n",
+       "  max_iter=-1, probability=False, random_state=0, shrinking=True,\n",
+       "  tol=0.001, verbose=False)"
+      ]
+     },
+     "execution_count": 90,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# tuning model\n",
+    "modelSVMgamma = SVC(kernel = 'rbf', gamma = 0.7, random_state = 0)\n",
+    "modelSVMgamma.fit(x_train, y_train)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 91,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "y_predSVMgamma = modelSVMgamma.predict(x_test)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 93,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[[6743  317]\n",
+      " [1415  525]]\n"
+     ]
+    }
+   ],
+   "source": [
+    "cm=confusion_matrix(y_test, y_predSVMgamma)\n",
+    "print(cm)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 94,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.8075555555555556\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(accuracy_score(y_test, y_predSVMgamma))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 95,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.28400296908186284\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(cohen_kappa_score(y_test, y_predSVMgamma))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 155,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "C:\\Users\\joann\\Anaconda3\\lib\\site-packages\\ipykernel_launcher.py:3: DataConversionWarning: A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel().\n",
+      "  This is separate from the ipykernel package so we can avoid doing imports until\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "KNeighborsClassifier(algorithm='auto', leaf_size=30, metric='minkowski',\n",
+       "           metric_params=None, n_jobs=1, n_neighbors=5, p=2,\n",
+       "           weights='uniform')"
+      ]
+     },
+     "execution_count": 155,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# setting up and tunning the KNN model\n",
+    "modelKNN = KNeighborsClassifier(n_neighbors = 5, metric = 'minkowski', p = 2)\n",
+    "modelKNN.fit(x_train, y_train)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 98,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "y_predKNN = modelKNN.predict(x_test)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 99,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[[6501  559]\n",
+      " [1328  612]]\n"
+     ]
+    }
+   ],
+   "source": [
+    "cm = confusion_matrix(y_test, y_predKNN)\n",
+    "print(cm)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 102,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.7903333333333333\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(accuracy_score(y_test, y_predKNN))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 101,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.2759486892637639\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(cohen_kappa_score(y_test, y_predKNN))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 156,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "C:\\Users\\joann\\Anaconda3\\lib\\site-packages\\ipykernel_launcher.py:3: DataConversionWarning: A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel().\n",
+      "  This is separate from the ipykernel package so we can avoid doing imports until\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "KNeighborsClassifier(algorithm='auto', leaf_size=30, metric='minkowski',\n",
+       "           metric_params=None, n_jobs=1, n_neighbors=7, p=2,\n",
+       "           weights='uniform')"
+      ]
+     },
+     "execution_count": 156,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# setting up and tunning the KNN model\n",
+    "modelKNN7 = KNeighborsClassifier(n_neighbors = 7, metric = 'minkowski', p = 2)\n",
+    "modelKNN7.fit(x_train, y_train)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 157,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "y_predKNN7 = modelKNN7.predict(x_test)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 165,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.7956666666666666\n",
+      "0.287837428486847\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(accuracy_score(y_test, y_predKNN7))\n",
+    "print(cohen_kappa_score(y_test, y_predKNN7))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 161,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[[6546  514]\n",
+      " [1325  615]]\n"
+     ]
+    }
+   ],
+   "source": [
+    "cm = confusion_matrix(y_test, y_predKNN7)\n",
+    "print(cm)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 171,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "C:\\Users\\joann\\Anaconda3\\lib\\site-packages\\ipykernel_launcher.py:3: DataConversionWarning: A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel().\n",
+      "  This is separate from the ipykernel package so we can avoid doing imports until\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "KNeighborsClassifier(algorithm='brute', leaf_size=30, metric='minkowski',\n",
+       "           metric_params=None, n_jobs=1, n_neighbors=7, p=2,\n",
+       "           weights='uniform')"
+      ]
+     },
+     "execution_count": 171,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# setting up and tunning the KNN model\n",
+    "modelKNNbt = KNeighborsClassifier(n_neighbors = 7, algorithm = 'brute', metric = 'minkowski', p = 2)\n",
+    "modelKNNbt.fit(x_train, y_train)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 172,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "y_predKNNbt = modelKNNbt.predict(x_test)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 173,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[[6545  515]\n",
+      " [1324  616]]\n"
+     ]
+    }
+   ],
+   "source": [
+    "cm = confusion_matrix(y_test, y_predKNNbt)\n",
+    "print(cm)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 174,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.7956666666666666\n",
+      "0.28815107661182104\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(accuracy_score(y_test, y_predKNNbt))\n",
+    "print(cohen_kappa_score(y_test, y_predKNNbt))   "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 104,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "C:\\Users\\joann\\Anaconda3\\lib\\site-packages\\ipykernel_launcher.py:3: DataConversionWarning: A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel().\n",
+      "  This is separate from the ipykernel package so we can avoid doing imports until\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "KNeighborsClassifier(algorithm='auto', leaf_size=30, metric='minkowski',\n",
+       "           metric_params=None, n_jobs=1, n_neighbors=3, p=2,\n",
+       "           weights='uniform')"
+      ]
+     },
+     "execution_count": 104,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# tunning model\n",
+    "modelKNN3 = KNeighborsClassifier(n_neighbors = 3, metric = 'minkowski', p = 2)\n",
+    "modelKNN3.fit(x_train, y_train)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 105,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "y_predKNN3 = modelKNN3.predict(x_test)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 107,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[[6299  761]\n",
+      " [1292  648]]\n"
+     ]
+    }
+   ],
+   "source": [
+    "cm = confusion_matrix(y_test, y_predKNN3)\n",
+    "print(cm)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 108,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.7718888888888888\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(accuracy_score(y_test, y_predKNN3))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 109,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.25115748996517795\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(cohen_kappa_score(y_test, y_predKNN3))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 110,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "C:\\Users\\joann\\Anaconda3\\lib\\site-packages\\ipykernel_launcher.py:2: DataConversionWarning: A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples,), for example using ravel().\n",
+      "  \n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "RandomForestClassifier(bootstrap=True, class_weight=None, criterion='gini',\n",
+       "            max_depth=2, max_features='auto', max_leaf_nodes=None,\n",
+       "            min_impurity_decrease=0.0, min_impurity_split=None,\n",
+       "            min_samples_leaf=1, min_samples_split=2,\n",
+       "            min_weight_fraction_leaf=0.0, n_estimators=10, n_jobs=1,\n",
+       "            oob_score=False, random_state=0, verbose=0, warm_start=False)"
+      ]
+     },
+     "execution_count": 110,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# setting up RandomForestClassifier\n",
+    "modelRF = RandomForestClassifier(max_depth=2, random_state=0)\n",
+    "modelRF.fit(x_train, y_train)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 111,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "y_predRF = modelRF.predict(x_test)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 113,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[[6871  189]\n",
+      " [1610  330]]\n"
+     ]
+    }
+   ],
+   "source": [
+    "cm = confusion_matrix(y_test, y_predRF)\n",
+    "print(cm)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 114,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.8001111111111111\n",
+      "0.19516952590012182\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(accuracy_score(y_test, y_predRF))\n",
+    "print(cohen_kappa_score(y_test, y_predRF))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 115,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "C:\\Users\\joann\\Anaconda3\\lib\\site-packages\\ipykernel_launcher.py:3: DataConversionWarning: A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples,), for example using ravel().\n",
+      "  This is separate from the ipykernel package so we can avoid doing imports until\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "RandomForestClassifier(bootstrap=True, class_weight=None, criterion='gini',\n",
+       "            max_depth=None, max_features='auto', max_leaf_nodes=None,\n",
+       "            min_impurity_decrease=0.0, min_impurity_split=None,\n",
+       "            min_samples_leaf=1, min_samples_split=2,\n",
+       "            min_weight_fraction_leaf=0.0, n_estimators=10, n_jobs=1,\n",
+       "            oob_score=False, random_state=0, verbose=0, warm_start=False)"
+      ]
+     },
+     "execution_count": 115,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# tuning RF, setting up RandomForestClassifier\n",
+    "modelRFn = RandomForestClassifier(max_depth=None, random_state=0)\n",
+    "modelRFn.fit(x_train, y_train)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 125,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "y_predRFn = modelRFn.predict(x_test)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 126,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[[6586  474]\n",
+      " [1425  515]]\n"
+     ]
+    }
+   ],
+   "source": [
+    "cm = confusion_matrix(y_test, y_predRFn)\n",
+    "print(cm)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 127,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.789\n",
+      "0.2411985963217379\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(accuracy_score(y_test, y_predRFn))\n",
+    "print(cohen_kappa_score(y_test, y_predRFn))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 119,
+   "metadata": {},
+   "outputs": [
+    {
+     "ename": "NameError",
+     "evalue": "name 'estimator' is not defined",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[1;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[1;31mNameError\u001b[0m                                 Traceback (most recent call last)",
+      "\u001b[1;32m<ipython-input-119-d7a63d9be702>\u001b[0m in \u001b[0;36m<module>\u001b[1;34m()\u001b[0m\n\u001b[0;32m      1\u001b[0m \u001b[1;31m# looking for estimator\u001b[0m\u001b[1;33m\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m----> 2\u001b[1;33m \u001b[0mestimator\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mget_params\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m",
+      "\u001b[1;31mNameError\u001b[0m: name 'estimator' is not defined"
+     ]
+    }
+   ],
+   "source": [
+    "# looking for estimator\n",
+    "estimator.get_params()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 120,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "C:\\Users\\joann\\Anaconda3\\lib\\site-packages\\ipykernel_launcher.py:3: DataConversionWarning: A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples,), for example using ravel().\n",
+      "  This is separate from the ipykernel package so we can avoid doing imports until\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "RandomForestClassifier(bootstrap=True, class_weight=None, criterion='gini',\n",
+       "            max_depth=5, max_features='auto', max_leaf_nodes=None,\n",
+       "            min_impurity_decrease=0.0, min_impurity_split=None,\n",
+       "            min_samples_leaf=1, min_samples_split=2,\n",
+       "            min_weight_fraction_leaf=0.0, n_estimators=10, n_jobs=1,\n",
+       "            oob_score=False, random_state=0, verbose=0, warm_start=False)"
+      ]
+     },
+     "execution_count": 120,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# tuning RF, setting up RandomForestClassifier\n",
+    "modelRF5= RandomForestClassifier(max_depth=5, random_state=0)\n",
+    "modelRF5.fit(x_train, y_train)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 124,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "y_predRF5 = modelRF5.predict(x_test)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 128,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[[6766  294]\n",
+      " [1453  487]]\n"
+     ]
+    }
+   ],
+   "source": [
+    "cm = confusion_matrix(y_test, y_predRF5)\n",
+    "print(cm)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 129,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.8058888888888889\n",
+      "0.2672908728945622\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(accuracy_score(y_test, y_predRF5))\n",
+    "print(cohen_kappa_score(y_test, y_predRF5))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 132,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "C:\\Users\\joann\\Anaconda3\\lib\\site-packages\\ipykernel_launcher.py:3: DataConversionWarning: A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples,), for example using ravel().\n",
+      "  This is separate from the ipykernel package so we can avoid doing imports until\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "RandomForestClassifier(bootstrap=True, class_weight=None, criterion='gini',\n",
+       "            max_depth=5, max_features='auto', max_leaf_nodes=None,\n",
+       "            min_impurity_decrease=0.0, min_impurity_split=None,\n",
+       "            min_samples_leaf=1, min_samples_split=2,\n",
+       "            min_weight_fraction_leaf=0.0, n_estimators=5, n_jobs=1,\n",
+       "            oob_score=False, random_state=0, verbose=0, warm_start=False)"
+      ]
+     },
+     "execution_count": 132,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# tuning RF, setting up RandomForestClassifier\n",
+    "modelRFest= RandomForestClassifier(max_depth=5, n_estimators=5, random_state=0)\n",
+    "modelRFest.fit(x_train, y_train)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 133,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "y_predRFest = modelRFest.predict(x_test)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 134,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[[6779  281]\n",
+      " [1456  484]]\n"
+     ]
+    }
+   ],
+   "source": [
+    "cm = confusion_matrix(y_test, y_predRFest)\n",
+    "print(cm)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 135,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "0.807\n",
+      "0.2686931626810374\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(accuracy_score(y_test, y_predRFest))\n",
+    "print(cohen_kappa_score(y_test, y_predRFest))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 136,
+   "metadata": {},
+   "outputs": [
+    {
+     "ename": "NameError",
+     "evalue": "name 'plotconfusion' is not defined",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[1;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[1;31mNameError\u001b[0m                                 Traceback (most recent call last)",
+      "\u001b[1;32m<ipython-input-136-324c44e0f985>\u001b[0m in \u001b[0;36m<module>\u001b[1;34m()\u001b[0m\n\u001b[1;32m----> 1\u001b[1;33m \u001b[0mplotconfusion\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0my_test\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0my_predRFest\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m",
+      "\u001b[1;31mNameError\u001b[0m: name 'plotconfusion' is not defined"
+     ]
+    }
+   ],
+   "source": [
+    "plotconfusion(y_test, y_predRFest)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 137,
+   "metadata": {},
+   "outputs": [
+    {
+     "ename": "NameError",
+     "evalue": "name 'confusionmat' is not defined",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[1;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[1;31mNameError\u001b[0m                                 Traceback (most recent call last)",
+      "\u001b[1;32m<ipython-input-137-b88780a50648>\u001b[0m in \u001b[0;36m<module>\u001b[1;34m()\u001b[0m\n\u001b[1;32m----> 1\u001b[1;33m \u001b[0mcmRFest\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mconfusionmat\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0my_test\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0my_ypredRFest\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m;\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m      2\u001b[0m \u001b[0mimages\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0mcm\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m;\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m      3\u001b[0m \u001b[0mcolorbar\u001b[0m\u001b[1;33m;\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;31mNameError\u001b[0m: name 'confusionmat' is not defined"
+     ]
+    }
+   ],
+   "source": [
+    "cmRFest = confusionmat(y_test, y_ypredRFest);\n",
+    "images(cm);\n",
+    "colorbar;"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 138,
+   "metadata": {},
+   "outputs": [
+    {
+     "ename": "ModuleNotFoundError",
+     "evalue": "No module named 'plt'",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[1;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[1;31mModuleNotFoundError\u001b[0m                       Traceback (most recent call last)",
+      "\u001b[1;32m<ipython-input-138-b680c497f95f>\u001b[0m in \u001b[0;36m<module>\u001b[1;34m()\u001b[0m\n\u001b[1;32m----> 1\u001b[1;33m \u001b[1;32mfrom\u001b[0m \u001b[0mplt\u001b[0m \u001b[1;32mimport\u001b[0m \u001b[0mconfusionmat\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m",
+      "\u001b[1;31mModuleNotFoundError\u001b[0m: No module named 'plt'"
+     ]
+    }
+   ],
+   "source": [
+    "from plt import confusionmat"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 139,
+   "metadata": {},
+   "outputs": [
+    {
+     "ename": "ValueError",
+     "evalue": "not enough values to unpack (expected 4, got 2)",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[1;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[1;31mValueError\u001b[0m                                Traceback (most recent call last)",
+      "\u001b[1;32m<ipython-input-139-91a831658863>\u001b[0m in \u001b[0;36m<module>\u001b[1;34m()\u001b[0m\n\u001b[0;32m      1\u001b[0m \u001b[1;31m# plotting confustion matrix\u001b[0m\u001b[1;33m\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m----> 2\u001b[1;33m \u001b[0mtn\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mfp\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mfn\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0mtp\u001b[0m \u001b[1;33m=\u001b[0m \u001b[0mconfusion_matrix\u001b[0m\u001b[1;33m(\u001b[0m\u001b[0my_test\u001b[0m\u001b[1;33m,\u001b[0m \u001b[0my_predRFest\u001b[0m\u001b[1;33m.\u001b[0m\u001b[0mravel\u001b[0m\u001b[1;33m(\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m)\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m",
+      "\u001b[1;31mValueError\u001b[0m: not enough values to unpack (expected 4, got 2)"
+     ]
+    }
+   ],
+   "source": [
+    "# plotting confustion matrix\n",
+    "tn, fp, fn, tp = confusion_matrix(y_test, y_predRFest.ravel())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 150,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[0.8098843  0.79285714 0.79782826]\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "C:\\Users\\joann\\Anaconda3\\lib\\site-packages\\sklearn\\model_selection\\_validation.py:458: DataConversionWarning: A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples,), for example using ravel().\n",
+      "  estimator.fit(X_train, y_train, **fit_params)\n",
+      "C:\\Users\\joann\\Anaconda3\\lib\\site-packages\\sklearn\\model_selection\\_validation.py:458: DataConversionWarning: A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples,), for example using ravel().\n",
+      "  estimator.fit(X_train, y_train, **fit_params)\n",
+      "C:\\Users\\joann\\Anaconda3\\lib\\site-packages\\sklearn\\model_selection\\_validation.py:458: DataConversionWarning: A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples,), for example using ravel().\n",
+      "  estimator.fit(X_train, y_train, **fit_params)\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(cross_val_score(modelRFest, x_train, y_train))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 151,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[0.78931581 0.77985714 0.77996857]\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "C:\\Users\\joann\\Anaconda3\\lib\\site-packages\\sklearn\\model_selection\\_validation.py:458: DataConversionWarning: A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel().\n",
+      "  estimator.fit(X_train, y_train, **fit_params)\n",
+      "C:\\Users\\joann\\Anaconda3\\lib\\site-packages\\sklearn\\model_selection\\_validation.py:458: DataConversionWarning: A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel().\n",
+      "  estimator.fit(X_train, y_train, **fit_params)\n",
+      "C:\\Users\\joann\\Anaconda3\\lib\\site-packages\\sklearn\\model_selection\\_validation.py:458: DataConversionWarning: A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel().\n",
+      "  estimator.fit(X_train, y_train, **fit_params)\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(cross_val_score(modelKNN, x_train, y_train))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 153,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "C:\\Users\\joann\\Anaconda3\\lib\\site-packages\\sklearn\\utils\\validation.py:578: DataConversionWarning: A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel().\n",
+      "  y = column_or_1d(y, warn=True)\n",
+      "C:\\Users\\joann\\Anaconda3\\lib\\site-packages\\sklearn\\utils\\validation.py:578: DataConversionWarning: A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel().\n",
+      "  y = column_or_1d(y, warn=True)\n",
+      "C:\\Users\\joann\\Anaconda3\\lib\\site-packages\\sklearn\\utils\\validation.py:578: DataConversionWarning: A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel().\n",
+      "  y = column_or_1d(y, warn=True)\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[0.81245536 0.79542857 0.80068581]\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(cross_val_score(modelSVMgamma, x_train, y_train))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.6.4"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
